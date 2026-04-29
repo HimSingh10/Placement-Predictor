@@ -26,9 +26,10 @@ pip install -r requirements.txt
 python train_pipeline.py
 streamlit run app.py
 
-Deployment
+## Live Demo: https://placement-predictor-y48jvfpehxi8afsf3ssvg2.streamlit.app/
+
+## Deployment
 Streamlit Cloud
 
- Author
-
+  ## Author
 Himanshu Singh
