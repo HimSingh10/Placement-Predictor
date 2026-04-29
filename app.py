@@ -1,11 +1,26 @@
 import streamlit as st
 import pandas as pd
 import pickle
+import os
 
-# Load model
-model = pickle.load(open("best_model.pkl", "rb"))
+# Page config
+st.set_page_config(page_title="Placement Predictor", layout="centered")
 
-st.title("Engineering Placement Predictor")
+# Load model safely
+@st.cache_resource
+def load_model():
+    try:
+        if not os.path.exists("best_model.pkl"):
+            return None
+        return pickle.load(open("best_model.pkl", "rb"))
+    except Exception as e:
+        st.error(f"Error loading model: {e}")
+        return None
+
+model = load_model()
+
+# Title
+st.title("🎓 Engineering Placement Predictor")
 
 st.write("Enter student details:")
 
@@ -21,54 +36,54 @@ mba_p = st.slider("Final Score (%)", 40, 100, 60)
 
 # Prediction
 if st.button("Predict Placement"):
-    input_data = pd.DataFrame([{
-        "gender": gender,
-        "ssc_p": ssc_p,
-        "hsc_p": hsc_p,
-        "degree_p": degree_p,
-        "workex": workex,
-        "etest_p": etest_p,
-        "specialisation": specialisation,
-        "mba_p": mba_p
-    }])
-
-    prediction = model.predict(input_data)[0]
-
-    if prediction == 1:
-        st.success("Student is likely to be Placed!")
+    if model is None:
+        st.error("Model not found. Please upload best_model.pkl")
     else:
-        st.error("Student is Not Likely to be Placed")
+        input_data = pd.DataFrame([{
+            "gender": gender,
+            "ssc_p": ssc_p,
+            "hsc_p": hsc_p,
+            "degree_p": degree_p,
+            "workex": workex,
+            "etest_p": etest_p,
+            "specialisation": specialisation,
+            "mba_p": mba_p
+        }])
 
-# Show Metrics
+        try:
+            prediction = model.predict(input_data)[0]
+
+            if prediction == 1:
+                st.success(" Student is likely to be Placed!")
+            else:
+                st.error(" Student is Not Likely to be Placed")
+
+        except Exception as e:
+            st.error(f"Prediction error: {e}")
+
+
+#  MODEL PERFORMANCE
+
 st.subheader("Model Performance")
 
-try:
+# Metrics
+if os.path.exists("metrics.txt"):
     with open("metrics.txt") as f:
         st.text(f.read())
-except:
-    st.warning("Run training first to generate metrics")
+else:
+    st.warning("⚠️ Metrics not available. Run training first.")
 
-try:
+# Confusion Matrix
+if os.path.exists("confusion_matrix.png"):
     st.image("confusion_matrix.png", caption="Confusion Matrix")
-except:
-    st.warning("Confusion matrix not found")
+else:
+    st.warning("Confusion matrix not available.")
 
-try:
-    with open("metrics.txt") as f:
-        st.text(f.read())
-except:
-    st.warning("Run training first to generate metrics")
+# FEATURE IMPORTANCE
 
-# Show Confusion Matrix
-try:
-    st.image("confusion_matrix.png", caption="Confusion Matrix")
-except:
-    st.warning("Confusion matrix not found")
-
-# Feature Importance Section
 st.subheader("Feature Importance")
 
-try:
+if os.path.exists("feature_importance.png"):
     st.image("feature_importance.png", caption="Top Important Features")
-except:
-    st.warning("Feature importance not found. Run training first.")
+else:
+    st.warning("Feature importance not available.")
